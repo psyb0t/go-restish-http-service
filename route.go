@@ -2,6 +2,7 @@ package httpservice
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -22,6 +23,15 @@ func (r *Route) GetHeader(name string) string {
 	return r.request.Header.Get(name)
 }
 
+func (r *Route) GetBody() (string, error) {
+	body_data, err := ioutil.ReadAll(r.request.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body_data), nil
+}
+
 func (r *Route) SuccessResponse() {
 	r.writer.WriteHeader(200)
 }
@@ -37,6 +47,11 @@ func (r *Route) SuccessObjectResponse(object interface{}) error {
 	r.writer.Write(json_object)
 
 	return nil
+}
+
+func (r *Route) SuccessStringResponse(text string) {
+	r.writer.WriteHeader(200)
+	r.writer.Write([]byte(text))
 }
 
 func (r *Route) ErrorResponse(reason string) {
