@@ -23,13 +23,13 @@ func (r *Route) GetHeader(name string) string {
 	return r.request.Header.Get(name)
 }
 
-func (r *Route) GetBody() (string, error) {
+func (r *Route) GetBody() ([]byte, error) {
 	body_data, err := ioutil.ReadAll(r.request.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(body_data), nil
+	return body_data, nil
 }
 
 func (r *Route) SuccessResponse() {
