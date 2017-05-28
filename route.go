@@ -32,7 +32,21 @@ func (r *Route) GetBody() ([]byte, error) {
 	return body_data, nil
 }
 
+func (r *Route) IsAuthorized() bool {
+	auth_key := r.GetHeader("X-Auth-Key")
+	if auth_key == "" {
+		return false
+	}
+
+	if !r.Service.Auth.IsValidKey(auth_key) {
+		return false
+	}
+
+	return true
+}
+
 func (r *Route) SuccessResponse() {
+	r.writer.Header().Set("Content-Type", "text/plain")
 	r.writer.WriteHeader(200)
 }
 
@@ -44,6 +58,8 @@ func (r *Route) SuccessObjectResponse(object interface{}) error {
 		return err
 	}
 
+	r.writer.Header().Set("Content-Type", "application/json")
+
 	r.writer.Write(json_object)
 
 	return nil
@@ -51,10 +67,18 @@ func (r *Route) SuccessObjectResponse(object interface{}) error {
 
 func (r *Route) SuccessStringResponse(text string) {
 	r.writer.WriteHeader(200)
+	r.writer.Header().Set("Content-Type", "text/plain")
 	r.writer.Write([]byte(text))
+}
+
+func (r *Route) ForbiddenResponse() {
+	r.writer.WriteHeader(403)
+	r.writer.Header().Set("Content-Type", "text/plain")
+	r.writer.Write([]byte("Permission denied!"))
 }
 
 func (r *Route) ErrorResponse(reason string) {
 	r.writer.WriteHeader(500)
+	r.writer.Header().Set("Content-Type", "text/plain")
 	r.writer.Write([]byte(reason))
 }

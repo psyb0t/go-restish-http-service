@@ -11,16 +11,21 @@ type RouteMethod func(*Route)
 
 type HttpService struct {
 	ListenAddress string
+	DB            *DB
+	Auth          *Auth
 	serverName    string
 	headers       map[string]string
 	router        *httprouter.Router
 }
 
-func New(address string) *HttpService {
+func New(address, db_path string) *HttpService {
 	service := &HttpService{
 		ListenAddress: address,
 		router:        httprouter.New(),
+		DB:            NewDB(db_path),
 	}
+
+	service.Auth = NewAuth(service)
 
 	service.headers = make(map[string]string)
 
@@ -40,7 +45,6 @@ func (s *HttpService) AddRoute(method, path string, fn RouteMethod) error {
 		p httprouter.Params) {
 
 		w.Header().Set("Server", s.serverName)
-		w.Header().Set("Content-Type", "application/json")
 
 		for key, val := range s.headers {
 			w.Header().Set(key, val)
@@ -65,7 +69,7 @@ func (s *HttpService) AddRoute(method, path string, fn RouteMethod) error {
 		s.router.PUT(path, handler)
 		return nil
 	case "DELETE":
-		s.router.POST(path, handler)
+		s.router.DELETE(path, handler)
 		return nil
 	}
 
@@ -73,5 +77,5 @@ func (s *HttpService) AddRoute(method, path string, fn RouteMethod) error {
 }
 
 func (s *HttpService) Start() {
-	http.ListenAndServe(s.ListenAddress, s.router)
+	panic(http.ListenAndServe(s.ListenAddress, s.router))
 }
