@@ -75,7 +75,7 @@ func (a *Auth) ResetAuthentication(user string) (string, error) {
 }
 
 func (a *Auth) GetUserAuthKey(user string) (string, error) {
-	val, err := a.Service.DB.Get("auth_user_" + user)
+	val, err := a.Service.DB.Get(a.makeUserKeyName(user))
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +84,7 @@ func (a *Auth) GetUserAuthKey(user string) (string, error) {
 }
 
 func (a *Auth) GetAuthKeyUser(key string) (string, error) {
-	val, err := a.Service.DB.Get("auth_key_" + key)
+	val, err := a.Service.DB.Get(a.makeAuthKeyKeyName(key))
 	if err != nil {
 		return "", err
 	}

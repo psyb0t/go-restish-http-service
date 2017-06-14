@@ -82,3 +82,9 @@ func (r *Route) ErrorResponse(reason string) {
 	r.writer.Header().Set("Content-Type", "text/plain")
 	r.writer.Write([]byte(reason))
 }
+
+func (r *Route) RedirectResponse(location string) {
+	r.SetHeader("Location", location)
+	r.writer.WriteHeader(301)
+
+}
