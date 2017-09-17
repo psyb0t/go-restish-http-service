@@ -2,7 +2,9 @@ package restishhttpservice
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -18,11 +20,20 @@ type HttpService struct {
 	router        *httprouter.Router
 }
 
+type GroupRoute struct {
+	Path       string
+	HttpMethod string
+	Method     RouteMethod
+}
+
 func New(address, db_path string) *HttpService {
 	service := &HttpService{
 		ListenAddress: address,
 		router:        httprouter.New(),
-		DB:            NewDB(db_path),
+	}
+
+	if db_path != "" {
+		service.DB = NewDB(db_path)
 	}
 
 	service.Auth = NewAuth(service)
@@ -40,7 +51,16 @@ func (s *HttpService) AddHeader(name, value string) {
 	s.headers[name] = value
 }
 
-func (s *HttpService) AddRoute(method, path string, fn RouteMethod) error {
+func (s *HttpService) AddRouteGroup(prefix string, routes ...*GroupRoute) {
+	for _, route := range routes {
+		s.AddRoute(route.HttpMethod,
+			path.Join(prefix, route.Path), route.Method)
+	}
+}
+
+func (s *HttpService) AddRoute(http_method, url_path string,
+	fn RouteMethod) error {
+
 	handler := func(w http.ResponseWriter, r *http.Request,
 		p httprouter.Params) {
 
@@ -58,22 +78,28 @@ func (s *HttpService) AddRoute(method, path string, fn RouteMethod) error {
 		})
 	}
 
-	switch method {
+	switch http_method {
 	case "GET":
-		s.router.GET(path, handler)
+		s.router.GET(url_path, handler)
 		return nil
 	case "POST":
-		s.router.POST(path, handler)
+		s.router.POST(url_path, handler)
 		return nil
 	case "PUT":
-		s.router.PUT(path, handler)
+		s.router.PUT(url_path, handler)
 		return nil
 	case "DELETE":
-		s.router.DELETE(path, handler)
+		s.router.DELETE(url_path, handler)
 		return nil
 	}
 
-	return errors.New("Unsupported route method")
+	return errors.New(fmt.Sprintf(
+		"Unsupported %s http method for route %s", http_method, url_path))
+}
+
+func (s *HttpService) AddStaticRoute(url_path, fs_path string) {
+	s.router.ServeFiles(
+		path.Join(url_path, "*filepath"), http.Dir(fs_path))
 }
 
 func (s *HttpService) Start() {

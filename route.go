@@ -46,7 +46,7 @@ func (r *Route) IsAuthorized() bool {
 }
 
 func (r *Route) SuccessResponse() {
-	r.writer.Header().Set("Content-Type", "text/plain")
+	r.SetHeader("Content-Type", "text/plain")
 	r.writer.WriteHeader(200)
 }
 
@@ -58,7 +58,7 @@ func (r *Route) SuccessObjectResponse(object interface{}) error {
 		return err
 	}
 
-	r.writer.Header().Set("Content-Type", "application/json")
+	r.SetHeader("Content-Type", "application/json")
 
 	r.writer.Write(json_object)
 
@@ -67,19 +67,19 @@ func (r *Route) SuccessObjectResponse(object interface{}) error {
 
 func (r *Route) SuccessStringResponse(text string) {
 	r.writer.WriteHeader(200)
-	r.writer.Header().Set("Content-Type", "text/plain")
+	r.SetHeader("Content-Type", "text/plain")
 	r.writer.Write([]byte(text))
 }
 
 func (r *Route) ForbiddenResponse() {
 	r.writer.WriteHeader(403)
-	r.writer.Header().Set("Content-Type", "text/plain")
+	r.SetHeader("Content-Type", "text/plain")
 	r.writer.Write([]byte("Permission denied!"))
 }
 
 func (r *Route) ErrorResponse(reason string) {
 	r.writer.WriteHeader(500)
-	r.writer.Header().Set("Content-Type", "text/plain")
+	r.SetHeader("Content-Type", "text/plain")
 	r.writer.Write([]byte(reason))
 }
 
