@@ -1,4 +1,4 @@
-package restishhttpservice
+package simplehttp
 
 import (
 	"fmt"
@@ -31,6 +31,14 @@ func (db *DB) GetPath() string {
 
 func (db *DB) MakeKeyPath(key string) string {
 	return fmt.Sprintf("%s/%s", db.path, key)
+}
+
+func (db *DB) KeyExists(key string) bool {
+	if _, err := os.Stat(db.MakeKeyPath(key)); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
 }
 
 func (db *DB) Set(key string, val []byte) error {

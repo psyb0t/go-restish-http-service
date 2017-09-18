@@ -1,4 +1,4 @@
-package restishhttpservice
+package simplehttp
 
 import (
 	"fmt"
