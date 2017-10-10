@@ -11,8 +11,38 @@ import (
 type Route struct {
 	Params  httprouter.Params
 	Service *HttpService
+	Input   []byte
 	writer  http.ResponseWriter
 	request *http.Request
+}
+
+func NewRoute(p httprouter.Params, s *HttpService,
+	w http.ResponseWriter, r *http.Request) (*Route, error) {
+
+	route := &Route{
+		Params:  p,
+		Service: s,
+		writer:  w,
+		request: r,
+	}
+
+	route_input, err := route.getInput()
+	if err != nil {
+		return nil, err
+	}
+
+	route.Input = route_input
+
+	return route, nil
+}
+
+func (r *Route) getInput() ([]byte, error) {
+	body_data, err := ioutil.ReadAll(r.request.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body_data, nil
 }
 
 func (r *Route) SetHeader(name, value string) {
@@ -21,15 +51,6 @@ func (r *Route) SetHeader(name, value string) {
 
 func (r *Route) GetHeader(name string) string {
 	return r.request.Header.Get(name)
-}
-
-func (r *Route) GetBody() ([]byte, error) {
-	body_data, err := ioutil.ReadAll(r.request.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body_data, nil
 }
 
 func (r *Route) IsAuthorized() bool {

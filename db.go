@@ -41,6 +41,7 @@ func (db *DB) KeyExists(key string) bool {
 	return true
 }
 
+// Add check for ../ and stuff like that
 func (db *DB) Set(key string, val []byte) error {
 	return ioutil.WriteFile(db.MakeKeyPath(key), val, 0644)
 }

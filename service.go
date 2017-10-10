@@ -10,6 +10,7 @@ import (
 )
 
 type RouteMethod func(*Route)
+type RouteMiddleware func(*Route)
 
 type HttpService struct {
 	ListenAddress string
@@ -20,10 +21,22 @@ type HttpService struct {
 	router        *httprouter.Router
 }
 
-type GroupRoute struct {
+type routeGroupItem struct {
 	Path       string
 	HttpMethod string
 	Method     RouteMethod
+	Middleware []RouteMiddleware
+}
+
+func NewRouteGroupItem(path string, http_method string,
+	method RouteMethod, middleware ...RouteMiddleware) *routeGroupItem {
+
+	return &routeGroupItem{
+		Path:       path,
+		HttpMethod: http_method,
+		Method:     method,
+		Middleware: middleware,
+	}
 }
 
 func New(address, db_path string) *HttpService {
@@ -51,15 +64,15 @@ func (s *HttpService) AddHeader(name, value string) {
 	s.headers[name] = value
 }
 
-func (s *HttpService) AddRouteGroup(prefix string, routes ...*GroupRoute) {
+func (s *HttpService) AddRouteGroup(prefix string, routes ...*routeGroupItem) {
 	for _, route := range routes {
 		s.AddRoute(route.HttpMethod,
-			path.Join(prefix, route.Path), route.Method)
+			path.Join(prefix, route.Path), route.Method, route.Middleware...)
 	}
 }
 
 func (s *HttpService) AddRoute(http_method, url_path string,
-	fn RouteMethod) error {
+	fn RouteMethod, middleware ...RouteMiddleware) error {
 
 	handler := func(w http.ResponseWriter, r *http.Request,
 		p httprouter.Params) {
@@ -70,12 +83,19 @@ func (s *HttpService) AddRoute(http_method, url_path string,
 			w.Header().Set(key, val)
 		}
 
-		fn(&Route{
-			Params:  p,
-			Service: s,
-			writer:  w,
-			request: r,
-		})
+		route, err := NewRoute(p, s, w, r)
+		if err != nil {
+			route.ErrorResponse(err.Error())
+			return
+		}
+
+		for _, m := range middleware {
+			if m != nil {
+				m(route)
+			}
+		}
+
+		fn(route)
 	}
 
 	switch http_method {
